@@ -2,6 +2,7 @@
 
 #include "score/string/string.h"
 #include <assert.h>
+#include <stdbool.h>
 
 const char *OPENMETEO_HOURLY_STRINGS[OPENMETEO_HOURLY_FLAG_MAX] = { /* NOTE: SS - ',' required at the moment. */
     "temperature_2m,",
@@ -48,7 +49,7 @@ const char *OPENMETEO_HOURLY_STRINGS[OPENMETEO_HOURLY_FLAG_MAX] = { /* NOTE: SS 
     "soil_moisture_27_to_81cm,"
 };
 
-static bool open_meteo_write_if_flag_set(Score_Buffer_Writer *writer, const uint64_t all_flags, const uint64_t flag, const uint64_t flag_index) {
+static bool open_meteo_write_if_flag_set(SCore_Buffer_Writer *writer, const uint64_t all_flags, const uint64_t flag, const uint64_t flag_index) {
     if(score_flag64_is_set(all_flags, flag)) {
         if(!score_buffer_writer_write_string(writer, OPENMETEO_HOURLY_STRINGS[flag_index])) {
             return false;
@@ -58,7 +59,7 @@ static bool open_meteo_write_if_flag_set(Score_Buffer_Writer *writer, const uint
     return true;
 }
 
-void open_meteo_write_url_to_writer(Score_Buffer_Writer *writer, const Open_Meteo_Data_Request *data_request) {
+void open_meteo_write_url_to_writer(SCore_Buffer_Writer *writer, const Open_Meteo_Data_Request *data_request) {
     assert(score_string_snprintf(writer,
         "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f"
         "&forecast_days=%u",

@@ -20,7 +20,7 @@ typedef enum {
     Open_Meteo_Type_Hourly,
 } Open_Meteo_Type;
 
-void open_meteo_write_url_to_writer(Score_Buffer_Writer *writer, const Open_Meteo_Data_Request *data_request);
+void open_meteo_write_url_to_writer(SCore_Buffer_Writer *writer, const Open_Meteo_Data_Request *data_request);
 
 /* Hourly. */
 #define OPENMETEO_HOURLY_FLAG_TEMPERATURE_2M                  ((uint64_t)1 << 0)

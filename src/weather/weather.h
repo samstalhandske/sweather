@@ -1,13 +1,14 @@
 #ifndef WEATHER_H
 #define WEATHER_H
 
+#include <stdbool.h>
 #include "score/http/http.h"
 #include "score/utils/flag/flag.h"
 
 #include "open_meteo.h"
 
 typedef struct {
-    Score_Http http;
+    SCore_Http http;
 } Weather_Retriever;
 
 bool weather_init_retriever(Weather_Retriever *retriever);

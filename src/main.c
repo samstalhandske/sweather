@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "score/types/types.h"
 #include "score/console/console.h"
 #include "score/string/string.h"
 
@@ -23,21 +24,21 @@ int main() {
 		}
 
 		{ /* Check if we should exit the program. */
-			if(score_string_compare(&buf[0], "q", false) == Score_String_Compare_Result_Equal) {
+			if(score_string_compare(&buf[0], "q", false) == SCore_String_Compare_Result_Equal) {
 				break;
 			}
-			if(score_string_compare(&buf[0], "exit", false) == Score_String_Compare_Result_Equal) {
+			if(score_string_compare(&buf[0], "exit", false) == SCore_String_Compare_Result_Equal) {
 				break;
 			}
-			if(score_string_compare(&buf[0], "quit", false) == Score_String_Compare_Result_Equal) {
+			if(score_string_compare(&buf[0], "quit", false) == SCore_String_Compare_Result_Equal) {
 				break;
 			}
 		}
 
 		printf("Read '%s'.\n", buf);
 
-		Score_String_Compare_Result compare_result = score_string_compare(&buf[0], "abc", true);
-		if(compare_result != Score_String_Compare_Result_Equal) {
+		SCore_String_Compare_Result compare_result = score_string_compare(&buf[0], "abc", true);
+		if(compare_result != SCore_String_Compare_Result_Equal) {
 			printf("Not equal. Result: %i.\n", compare_result);
 			continue;
 		}
