@@ -1,5 +1,5 @@
 # Sweather
-Weather program written in C89.
+Weather program written in C89. Work in progress.
 
 Uses [Open-Meteo](https://open-meteo.com/) for weather-data.
 
