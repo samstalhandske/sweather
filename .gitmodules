@@ -1,0 +1,3 @@
+[submodule "include/score"]
+	path = include/score
+	url = git@github.com:samstalhandske/score.git
