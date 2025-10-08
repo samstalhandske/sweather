@@ -5,7 +5,7 @@ LIBS = curl
 
 INCLUDE_DIRS = include src
 INCLUDE_FILES = include/score/types/types.h
-CFLAGS = -std=c$(C_VERSION) -Wall -Wextra -Werror $(addprefix -include,$(INCLUDE_FILES)) $(addprefix -I,$(INCLUDE_DIRS)) $(addprefix -l,$(LIBS))
+CFLAGS = -std=c$(C_VERSION) -Wall -Wextra -Werror -Wpedantic $(addprefix -include ,$(INCLUDE_FILES)) $(addprefix -I,$(INCLUDE_DIRS)) $(addprefix -l,$(LIBS))
 
 SRC_DIR := src
 SRC_FILES := $(shell find $(SRC_DIR) -name "*.c")

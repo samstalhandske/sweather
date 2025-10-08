@@ -5,11 +5,22 @@
 
 #include "score/buffer/writer/writer.h"
 #include "score/utils/flag/flag.h"
+#include "score/json/json.h"
+
 #include "coordinate.h"
+#include "date.h"
+
+typedef enum {
+    Open_Meteo_Data_Request_Temperature_Unit_Celsius,
+    Open_Meteo_Data_Request_Temperature_Unit_Fahrenheit
+} Open_Meteo_Data_Request_Temperature_Unit;
 
 typedef struct {
     Geographical_Coordinate coordinate;
+    unsigned char past_days;
     unsigned char forecast_days;
+
+    Open_Meteo_Data_Request_Temperature_Unit temperature_unit;
 
     uint64_t current_flags;
     uint64_t hourly_flags;
@@ -17,10 +28,49 @@ typedef struct {
 } Open_Meteo_Data_Request;
 
 typedef enum {
-    Open_Meteo_Type_Hourly,
+    Open_Meteo_Type_Hourly
 } Open_Meteo_Type;
 
+typedef struct {
+    Date_Time date_time;
+
+    double windspeed;
+} Open_Meteo_Report_Hourly_Entry;
+
+typedef struct {
+    Date date;
+} Open_Meteo_Report_Daily_Entry;
+
+
+/* TODO: SS - Parse the current/hourly/daily_units. */
+
+typedef struct {
+    Date_Time date_time;
+    uint64_t flags;
+} Open_Meteo_Report_Current;
+
+typedef struct {
+    Open_Meteo_Report_Hourly_Entry* entries;
+    uint32_t entry_count;
+    uint64_t flags;
+} Open_Meteo_Report_Hourly;
+
+typedef struct {
+    Open_Meteo_Report_Daily_Entry* entries;
+    uint32_t entry_count;
+    uint64_t flags;
+} Open_Meteo_Report_Daily;
+
+
+typedef struct {
+    Open_Meteo_Report_Current current;
+    Open_Meteo_Report_Hourly hourly;
+    Open_Meteo_Report_Daily daily;
+} Open_Meteo_Report;
+
 void open_meteo_write_url_to_writer(SCore_Buffer_Writer *writer, const Open_Meteo_Data_Request *data_request);
+
+SCORE_BOOL open_meteo_create_report_from_json_object(const SCore_JSON_Object *json_object, Open_Meteo_Report *out_report);
 
 /* Hourly. */
 #define OPENMETEO_HOURLY_FLAG_TEMPERATURE_2M                  ((uint64_t)1 << 0)

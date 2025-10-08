@@ -3,6 +3,9 @@
 #include "score/string/string.h"
 #include <assert.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 const char *OPENMETEO_HOURLY_STRINGS[OPENMETEO_HOURLY_FLAG_MAX] = { /* NOTE: SS - ',' required at the moment. */
     "temperature_2m,",
@@ -62,9 +65,11 @@ static bool open_meteo_write_if_flag_set(SCore_Buffer_Writer *writer, const uint
 void open_meteo_write_url_to_writer(SCore_Buffer_Writer *writer, const Open_Meteo_Data_Request *data_request) {
     assert(score_string_snprintf(writer,
         "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f"
-        "&forecast_days=%u",
+        "&forecast_days=%u&past_days=%u"
+        "&temperature_unit=%s",
         data_request->coordinate.latitude, data_request->coordinate.longitude,
-        data_request->forecast_days
+        data_request->forecast_days, data_request->past_days,
+        data_request->temperature_unit == Open_Meteo_Data_Request_Temperature_Unit_Celsius ? "celsius" : "fahrenheit"
     ));
 
     { /* Hourly. */
@@ -75,11 +80,13 @@ void open_meteo_write_url_to_writer(SCore_Buffer_Writer *writer, const Open_Mete
                 return;
             }
 
-            u64 i;
-            for (i = 0; i < OPENMETEO_HOURLY_FLAG_MAX; i++) {
-                uint64_t flag = ((uint64_t)1 << i);
-                if (!open_meteo_write_if_flag_set(writer, flags, flag, i)) {
-                    return;
+            {
+                u64 i;
+                for (i = 0; i < OPENMETEO_HOURLY_FLAG_MAX; i++) {
+                    uint64_t flag = ((uint64_t)1 << i);
+                    if (!open_meteo_write_if_flag_set(writer, flags, flag, i)) {
+                        return;
+                    }
                 }
             }
         }
@@ -108,5 +115,95 @@ void open_meteo_write_url_to_writer(SCore_Buffer_Writer *writer, const Open_Mete
 
 
     }
+}
 
+SCORE_BOOL open_meteo_create_report_from_json_object(const SCore_JSON_Object *json_object, Open_Meteo_Report *out_report) {
+    Open_Meteo_Report_Current report_current;
+    Open_Meteo_Report_Hourly report_hourly;
+    Open_Meteo_Report_Daily report_daily;
+
+    if(json_object == NULL) {
+        return SCORE_FALSE;
+    }
+    if(out_report == NULL) {
+        return SCORE_FALSE;
+    }
+
+    /* Current. */
+    printf("Current ...\n");
+    memset(&report_current, 0, sizeof(Open_Meteo_Report_Current));
+
+    /* Hourly. */
+    printf("Hourly ...\n");
+    memset(&report_hourly, 0, sizeof(report_hourly));
+
+    {
+        SCore_JSON_Object hourly_object;
+        if(!score_json_get_object(json_object, "hourly", SCORE_FALSE, &hourly_object)) {
+            return false;
+        }
+
+        {
+            SCore_JSON_Object time_object;
+            SCore_JSON_Array time_array;
+
+            if(!score_json_get_object(&hourly_object, "time", SCORE_FALSE, &time_object)) {
+                return false;
+            }
+
+            if(score_json_as_array(&time_object, &time_array)) {
+                uint32_t i;
+
+                printf("Time array contains %u elements.\n", time_array.size);
+
+                /* Allocate 'time_array.size' elements of Open_Meteo_Report_Hourly_Entries. */
+                report_hourly.entry_count = time_array.size;
+                report_hourly.entries = calloc(report_hourly.entry_count, sizeof(Open_Meteo_Report_Hourly_Entry));
+                assert(report_hourly.entries != NULL);
+
+                for(i = 0; i < report_hourly.entry_count; i++) {
+                    Open_Meteo_Report_Hourly_Entry *entry = &report_hourly.entries[i];
+                    assert(entry != NULL);
+
+                    assert(json_to_date_time(&time_array.data[i], &entry->date_time));
+
+                    printf("Date_Time for element %u:\n", i);
+                    print_date(entry->date_time.date);
+                    print_time(entry->date_time.time);
+                }
+
+                /*
+                char backing[64];
+                memset(&backing[0], 0, sizeof(backing));
+                SCore_Buffer buf = score_buffer_create_from_backing(&backing[0], sizeof(backing));
+
+                uint32_t i;
+                for(i = 0; i < time_array.size; i++) {
+                    memset(&backing[0], 0, sizeof(backing));
+                    SCore_Buffer_Writer writer = score_buffer_writer_create(&buf);
+
+                    SCore_JSON_Object *json_object = &time_array.data[i];
+
+                    if(!score_json_write_to_buffer(&writer, *json_object)) {
+                        break;
+                    }
+
+                    printf("Element %u: '%s'.\n", i, backing);
+                }
+                */
+            }
+
+            score_json_array_dispose(&time_array);
+        }
+    }
+
+
+    /* Daily. */
+    memset(&report_daily, 0, sizeof(Open_Meteo_Report_Daily));
+
+    out_report->current  = report_current;
+    out_report->hourly   = report_hourly;
+    out_report->daily    = report_daily;
+
+    return SCORE_TRUE;
 }

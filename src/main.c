@@ -7,9 +7,10 @@
 #include "weather/weather.h"
 
 int main() {
+	Weather_Retriever weather_retriever = {0};
+
 	printf("Sweather!\n");
 
-	Weather_Retriever weather_retriever = {0};
 	if(!weather_init_retriever(&weather_retriever)) {
 		printf("Failed to initialize weather-retriever.\n");
 		return -1;
@@ -18,48 +19,60 @@ int main() {
 	while(true) {
 		printf("Type the name of a city.\n");
 
-		char buf[32];
-		if(!score_console_read(&buf[0], 32)) {
-			break;
-		}
+		{ /* Read from stdin. */
+			char console_read_buffer[32];
 
-		{ /* Check if we should exit the program. */
-			if(score_string_compare(&buf[0], "q", false) == SCore_String_Compare_Result_Equal) {
+
+			if(!score_console_read_from_stdin(&console_read_buffer[0], sizeof(console_read_buffer))) {
 				break;
 			}
-			if(score_string_compare(&buf[0], "exit", false) == SCore_String_Compare_Result_Equal) {
-				break;
-			}
-			if(score_string_compare(&buf[0], "quit", false) == SCore_String_Compare_Result_Equal) {
-				break;
-			}
-		}
 
-		printf("Read '%s'.\n", buf);
+			{ /* Check if we should exit the program. */
+				if(score_string_compare(&console_read_buffer[0], "q", false) == SCore_String_Compare_Result_Equal) {
+					break;
+				}
+				if(score_string_compare(&console_read_buffer[0], "exit", false) == SCore_String_Compare_Result_Equal) {
+					break;
+				}
+				if(score_string_compare(&console_read_buffer[0], "quit", false) == SCore_String_Compare_Result_Equal) {
+					break;
+				}
+			}
 
-		SCore_String_Compare_Result compare_result = score_string_compare(&buf[0], "abc", true);
-		if(compare_result != SCore_String_Compare_Result_Equal) {
-			printf("Not equal. Result: %i.\n", compare_result);
-			continue;
+			printf("Read '%s'.\n", console_read_buffer);
+
+			{ /* TEMP: SS - Compare against 'abc'. Might be city-name or something later. */
+				SCore_String_Compare_Result compare_result = score_string_compare(&console_read_buffer[0], "abc", true);
+				if(compare_result != SCore_String_Compare_Result_Equal) {
+					printf("Not equal. Result: %i.\n", compare_result);
+					continue;
+				}
+			}
 		}
 
 		printf("Equal!\n");
 
-		Geographical_Coordinate coords = {0};
-		coords.latitude = 55.476168;
-		coords.longitude= 13.494602;
+		{ /* Build a 'Open_Meteo_Data_Request' and send it off. */
+			Open_Meteo_Data_Request weather_data_request = {0};
 
-		Open_Meteo_Data_Request weather_data_request = {
-			.coordinate = coords,
-			.forecast_days = 1,
-			.current_flags = 0,
-			.hourly_flags = OPENMETEO_HOURLY_FLAG_RAIN,
-			.daily_flags = 0,
-		};
+			weather_data_request.coordinate.latitude = 55.476168;
+			weather_data_request.coordinate.longitude= 13.494602;
+			weather_data_request.past_days = 0;
+			weather_data_request.forecast_days = 2;
+			weather_data_request.temperature_unit = Open_Meteo_Data_Request_Temperature_Unit_Celsius;
+			weather_data_request.current_flags = 0;
+			weather_data_request.hourly_flags = OPENMETEO_HOURLY_FLAG_RAIN | OPENMETEO_HOURLY_FLAG_TEMPERATURE_2M;
+			weather_data_request.daily_flags = 0;
 
-		Weather_Report report;
-		if(weather_get_report(&weather_retriever, &weather_data_request, &report)) {
-
+			{
+				Weather_Report report;
+				if(weather_get_report(&weather_retriever, &weather_data_request, &report)) {
+					printf("Got a report!\n");
+				}
+				else {
+					printf("Failed to get a report!\n");
+				}
+			}
 		}
 	}
 
