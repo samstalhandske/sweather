@@ -4,6 +4,8 @@
 #include "score/json/json.h"
 #include <stdbool.h>
 
+/* TODO: SS - Replace with score/time/time.h? */
+
 typedef struct {
     uint16_t year;
     uint8_t month;
@@ -13,6 +15,7 @@ typedef struct {
 typedef struct {
     uint8_t hour;
     uint8_t minute;
+    uint8_t second;
 } Time;
 
 typedef struct {

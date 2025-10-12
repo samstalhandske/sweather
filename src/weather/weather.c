@@ -25,7 +25,7 @@ void weather_dispose_retriever(Weather_Retriever *retriever) {
 bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Request *data_request, Weather_Report *out_report) {
     SCore_Http_Response response;
     SCore_JSON_Object json_object;
-    char json_buffer_backing[4096];
+    uint8_t json_buffer_backing[4096];
     SCore_Buffer json_buffer;
     SCore_Buffer_Writer json_writer;
     Open_Meteo_Report open_meteo_report;
@@ -40,7 +40,7 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
 
     memset(&response, 0, sizeof(SCore_Http_Response));
     {
-        char url_backing[1024];
+        uint8_t url_backing[1024];
         SCore_Buffer url_buffer;
         SCore_Buffer_Writer url_writer;
 
@@ -55,7 +55,7 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
 
         printf("Url: '%s'.\n", url_backing);
 
-        if (!score_http_perform(&retriever->http, url_backing, &response)) {
+        if (!score_http_perform(&retriever->http, (char *)url_backing, &response)) {
             return false;
         }
     }
@@ -81,32 +81,100 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
 
     printf("Json Buffer: '%s'.\n", json_buffer_backing);
 
-    if (!open_meteo_create_report_from_json_object(&json_object, &open_meteo_report)) {
+    if (!open_meteo_create_report_from_json_object(
+            &json_object,
+            data_request->current_flags,
+            data_request->hourly_flags,
+            data_request->daily_flags,
+            &open_meteo_report)) {
         score_json_dispose(&json_object);
         score_http_dispose_response(&response);
         return false;
     }
 
-    open_meteo_report.current.flags = data_request->current_flags;
-    open_meteo_report.hourly.flags  = data_request->hourly_flags;
-    open_meteo_report.daily.flags   = data_request->daily_flags;
-
     printf("## Open_Meteo_Report\n");
+    printf("Time-zone abbreviation: %s.\n", open_meteo_report.timezone_abbreviation);
     printf("Current:\n");
     {
         Open_Meteo_Report_Current *v = &open_meteo_report.current;
-        printf("- Flags: %lu.\n", v->flags);
+        printf("- Flags: %u.\n", v->flags);
     }
     printf("Hourly:\n");
     {
         Open_Meteo_Report_Hourly *v = &open_meteo_report.hourly;
-        printf("- Flags: %lu.\n", v->flags);
+        /*printf("- Flags: %u.\n", v->flags);*/
         printf("- Entry-count: %u.\n", v->entry_count);
+        {
+            uint32_t i;
+            for(i = 0; i < v->entry_count; i++) {
+                Open_Meteo_Report_Hourly_Entry *entry = &v->entries[i];
+
+                printf("(%02i) %02u-%02u-%02u %02u:%02u:%02u\n",
+                    i, entry->date_time.date.year, entry->date_time.date.month, entry->date_time.date.day, entry->date_time.time.hour, entry->date_time.time.minute, entry->date_time.time.second
+                );
+
+                { /* Temperatures.*/
+                    if(entry->temperature_2m.is_set) {
+                        Open_Meteo_Report_Temperature *temp = &entry->temperature_2m;
+                        printf("* temperature (%um): %.1f %s.\n",
+                            temp->meters_above_ground,
+                            temp->temperature,
+                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                        );
+                    }
+                    if(entry->temperature_80m.is_set) {
+                        Open_Meteo_Report_Temperature *temp = &entry->temperature_80m;
+                        printf("* temperature (%um): %.1f %s.\n",
+                            temp->meters_above_ground,
+                            temp->temperature,
+                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                        );
+                    }
+                    if(entry->temperature_120m.is_set) {
+                        Open_Meteo_Report_Temperature *temp = &entry->temperature_120m;
+                        printf("* temperature (%um): %.1f %s.\n",
+                            temp->meters_above_ground,
+                            temp->temperature,
+                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                        );
+                    }
+                    if(entry->temperature_180m.is_set) {
+                        Open_Meteo_Report_Temperature *temp = &entry->temperature_180m;
+                        printf("* temperature (%um): %.1f %s.\n",
+                            temp->meters_above_ground,
+                            temp->temperature,
+                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                        );
+                    }
+                    if(entry->apparent_temperature.is_set) {
+                        Open_Meteo_Report_Temperature *temp = &entry->apparent_temperature;
+                        printf("* apparent_temperature: %.1f %s.\n",
+                            temp->temperature,
+                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                        );
+                    }
+                }
+                { /* Rain. */
+                    if(entry->rain.is_set) {
+                        Open_Meteo_Report_Rain *v = &entry->rain;
+                        printf("* rain: %.1f %s.\n",
+                            v->value,
+                            v->unit == Open_Meteo_Unit_Rain_Millimeter ? "mm" : "??"
+                        );
+                    }
+                }
+
+
+                if(entry->date_time.time.hour % 23 == 0 && entry->date_time.time.hour != 0) {
+                    printf("\n");
+                }
+            }
+        }
     }
     printf("Daily:\n");
     {
         Open_Meteo_Report_Daily *v = &open_meteo_report.daily;
-        printf("- Flags: %lu.\n", v->flags);
+        printf("- Flags: %u.\n", v->flags);
         printf("- Entry-count: %u.\n", v->entry_count);
     }
 

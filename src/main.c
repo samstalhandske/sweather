@@ -3,6 +3,9 @@
 #include "score/types/types.h"
 #include "score/console/console.h"
 #include "score/string/string.h"
+#include "score/buffer/writer/writer.h"
+
+#include "score/allocator/allocator.h"
 
 #include "weather/weather.h"
 
@@ -21,7 +24,6 @@ int main() {
 
 		{ /* Read from stdin. */
 			char console_read_buffer[32];
-
 
 			if(!score_console_read_from_stdin(&console_read_buffer[0], sizeof(console_read_buffer))) {
 				break;
@@ -44,7 +46,7 @@ int main() {
 			{ /* TEMP: SS - Compare against 'abc'. Might be city-name or something later. */
 				SCore_String_Compare_Result compare_result = score_string_compare(&console_read_buffer[0], "abc", true);
 				if(compare_result != SCore_String_Compare_Result_Equal) {
-					printf("Not equal. Result: %i.\n", compare_result);
+					printf("Not equal. Compare-result: %i.\n", compare_result);
 					continue;
 				}
 			}
@@ -59,10 +61,15 @@ int main() {
 			weather_data_request.coordinate.longitude= 13.494602;
 			weather_data_request.past_days = 0;
 			weather_data_request.forecast_days = 2;
-			weather_data_request.temperature_unit = Open_Meteo_Data_Request_Temperature_Unit_Celsius;
+			weather_data_request.temperature_unit = Open_Meteo_Unit_Temperature_Celsius;
 			weather_data_request.current_flags = 0;
-			weather_data_request.hourly_flags = OPENMETEO_HOURLY_FLAG_RAIN | OPENMETEO_HOURLY_FLAG_TEMPERATURE_2M;
 			weather_data_request.daily_flags = 0;
+			weather_data_request.hourly_flags.rain = true;
+			weather_data_request.hourly_flags.apparent_temperature = true;
+			weather_data_request.hourly_flags.temperature_2m = true;
+			weather_data_request.hourly_flags.temperature_80m = true;
+			weather_data_request.hourly_flags.temperature_120m = true;
+			weather_data_request.hourly_flags.temperature_180m = true;
 
 			{
 				Weather_Report report;
