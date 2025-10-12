@@ -61,11 +61,12 @@ int main() {
 			weather_data_request.coordinate.longitude= 13.494602;
 			weather_data_request.past_days = 0;
 			weather_data_request.forecast_days = 2;
-			weather_data_request.temperature_unit = Open_Meteo_Unit_Temperature_Celsius;
+			weather_data_request.temperature_unit = Open_Meteo_Unit_Celsius;
 			weather_data_request.current_flags = 0;
 			weather_data_request.daily_flags = 0;
 			weather_data_request.hourly_flags.rain = true;
 			weather_data_request.hourly_flags.apparent_temperature = true;
+			weather_data_request.hourly_flags.wind_speed_10m = true;
 			weather_data_request.hourly_flags.temperature_2m = true;
 			weather_data_request.hourly_flags.temperature_80m = true;
 			weather_data_request.hourly_flags.temperature_120m = true;

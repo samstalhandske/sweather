@@ -6,8 +6,6 @@
 #include "score/buffer/writer/writer.h"
 #include "score/json/json.h"
 
-#include "open_meteo.h"
-
 bool weather_init_retriever(Weather_Retriever *retriever) {
     assert(retriever != NULL);
     assert(retriever->http.curl == NULL);
@@ -109,9 +107,20 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
             for(i = 0; i < v->entry_count; i++) {
                 Open_Meteo_Report_Hourly_Entry *entry = &v->entries[i];
 
-                printf("(%02i) %02u-%02u-%02u %02u:%02u:%02u\n",
-                    i, entry->date_time.date.year, entry->date_time.date.month, entry->date_time.date.day, entry->date_time.time.hour, entry->date_time.time.minute, entry->date_time.time.second
+                printf("(%02i) %u-%02u-%02u %02u:%02u:%02d.%02d (%u.%02u)\n",
+                    i,
+                    entry->date_time.iso.year,
+                    entry->date_time.iso.month,
+                    entry->date_time.iso.day,
+                    entry->date_time.iso.hour,
+                    entry->date_time.iso.minute,
+                    (uint8_t)entry->date_time.iso.second,
+                    (uint8_t)((entry->date_time.iso.second - (uint8_t)entry->date_time.iso.second) * 100 + 0.5f),
+
+                    entry->date_time.unix.seconds_since_1970_01_01,
+                    entry->date_time.unix.milliseconds
                 );
+
 
                 { /* Temperatures.*/
                     if(entry->temperature_2m.is_set) {
@@ -119,7 +128,7 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
                         printf("* temperature (%um): %.1f %s.\n",
                             temp->meters_above_ground,
                             temp->temperature,
-                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                            temp->unit == Open_Meteo_Unit_Celsius ? "°C" : "°F"
                         );
                     }
                     if(entry->temperature_80m.is_set) {
@@ -127,7 +136,7 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
                         printf("* temperature (%um): %.1f %s.\n",
                             temp->meters_above_ground,
                             temp->temperature,
-                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                            temp->unit == Open_Meteo_Unit_Celsius ? "°C" : "°F"
                         );
                     }
                     if(entry->temperature_120m.is_set) {
@@ -135,7 +144,7 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
                         printf("* temperature (%um): %.1f %s.\n",
                             temp->meters_above_ground,
                             temp->temperature,
-                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                            temp->unit == Open_Meteo_Unit_Celsius ? "°C" : "°F"
                         );
                     }
                     if(entry->temperature_180m.is_set) {
@@ -143,14 +152,14 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
                         printf("* temperature (%um): %.1f %s.\n",
                             temp->meters_above_ground,
                             temp->temperature,
-                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                            temp->unit == Open_Meteo_Unit_Celsius ? "°C" : "°F"
                         );
                     }
                     if(entry->apparent_temperature.is_set) {
                         Open_Meteo_Report_Temperature *temp = &entry->apparent_temperature;
                         printf("* apparent_temperature: %.1f %s.\n",
                             temp->temperature,
-                            temp->unit == Open_Meteo_Unit_Temperature_Celsius ? "°C" : "°F"
+                            temp->unit == Open_Meteo_Unit_Celsius ? "°C" : "°F"
                         );
                     }
                 }
@@ -159,13 +168,13 @@ bool weather_get_report(Weather_Retriever *retriever, const Open_Meteo_Data_Requ
                         Open_Meteo_Report_Rain *v = &entry->rain;
                         printf("* rain: %.1f %s.\n",
                             v->value,
-                            v->unit == Open_Meteo_Unit_Rain_Millimeter ? "mm" : "??"
+                            v->unit == Open_Meteo_Unit_Millimeter ? "mm" : "??"
                         );
                     }
                 }
 
 
-                if(entry->date_time.time.hour % 23 == 0 && entry->date_time.time.hour != 0) {
+                if(entry->date_time.iso.hour % 23 == 0 && entry->date_time.iso.hour != 0) {
                     printf("\n");
                 }
             }

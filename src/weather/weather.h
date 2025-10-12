@@ -5,7 +5,7 @@
 #include "score/http/http.h"
 #include "score/utils/flag/flag.h"
 
-#include "open_meteo.h"
+#include "score/integrations/open_meteo/open_meteo.h"
 
 typedef struct {
     SCore_Http http;
